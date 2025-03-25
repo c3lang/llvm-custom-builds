@@ -4,13 +4,14 @@
 set -o errexit
 set -o errtrace
 
-LLVM_VERSION=$1
-LLVM_REPO_URL=${2:-https://github.com/llvm/llvm-project.git}
-LLVM_CROSS="$3"
+LLVM_TYPE=$1
+LLVM_VERSION=$2
+LLVM_REPO_URL=${3:-https://github.com/llvm/llvm-project.git}
+LLVM_CROSS="$4"
 
 if [[ -z "$LLVM_REPO_URL" || -z "$LLVM_VERSION" ]]
 then
-  echo "Usage: $0 <llvm-version> <llvm-repository-url> [aarch64/riscv64]"
+  echo "Usage: $0 release|debug <llvm-version> <llvm-repository-url> [aarch64/riscv64]"
   echo
   echo "# Arguments"
   echo "  llvm-version         The name of a LLVM release branch without the 'release/' prefix"
@@ -57,7 +58,9 @@ case "${LLVM_CROSS}" in
     *) ;;
 esac
 
+
 # Run `cmake` to configure the project.
+if [[ "$LLVM_TYPE" == "debug" ]]; then
 cmake \
   -G Ninja \
   -DCMAKE_BUILD_TYPE=MinSizeRel \
@@ -75,10 +78,30 @@ cmake \
   "${CROSS_COMPILE}" \
   "${CMAKE_ARGUMENTS}" \
   ../llvm
+  cmake --build . --config MinSizeRel
+  DESTDIR=destdir cmake --install . --strip --config MinSizeRel
+else
+cmake \
+  -G Ninja \
+  -DCMAKE_BUILD_TYPE=MinSizeRel \
+  -DCMAKE_INSTALL_PREFIX="/" \
+  -DLLVM_ENABLE_PROJECTS="clang;lld" \
+  -DLLVM_ENABLE_TERMINFO=OFF \
+  -DLLVM_ENABLE_ZLIB=OFF \
+  -DLLVM_INCLUDE_DOCS=OFF \
+  -DLLVM_INCLUDE_EXAMPLES=OFF \
+  -DLLVM_INCLUDE_TESTS=OFF \
+  -DLLVM_INCLUDE_TOOLS=ON \
+  -DLLVM_INCLUDE_UTILS=OFF \
+  -DLLVM_OPTIMIZED_TABLEGEN=ON \
+  -DLLVM_TARGETS_TO_BUILD="X86;AArch64;RISCV;WebAssembly;LoongArch" \
+  "${CROSS_COMPILE}" \
+  "${CMAKE_ARGUMENTS}" \
+  ../llvm
+  cmake --build . --config MinSizeRel
+  DESTDIR=destdir cmake --install . --strip --config MinSizeRel
+fi
 
-# Showtime!
-cmake --build . --config MinSizeRel
-DESTDIR=destdir cmake --install . --strip --config MinSizeRel
 
 # move usr/bin/* to bin/ or llvm-config will be broken
 if [ ! -d destdir/bin ];then

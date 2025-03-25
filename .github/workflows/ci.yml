@@ -62,19 +62,19 @@ jobs:
         if: matrix.target.id != 'linux-aarch64' && matrix.target.id != 'linux-riscv64'
         shell: bash
         run: |
-          ./build.sh ${{ matrix.llvm_version }} ${{ matrix.llvm_repo_url }}
+          ./build.sh release ${{ matrix.llvm_version }} ${{ matrix.llvm_repo_url }}
 
       - name: Build (linux-aarch64)
         if: matrix.target.id == 'linux-aarch64'
         shell: bash
         run: |
-          ./build.sh ${{ matrix.llvm_version }} ${{ matrix.llvm_repo_url }} aarch64
+          ./build.sh release ${{ matrix.llvm_version }} ${{ matrix.llvm_repo_url }} aarch64
 
       - name: Build (linux-aarch64)
         if: matrix.target.id == 'linux-riscv64'
         shell: bash
         run: |
-          ./build.sh ${{ matrix.llvm_version }} ${{ matrix.llvm_repo_url }} riscv64
+          ./build.sh release ${{ matrix.llvm_version }} ${{ matrix.llvm_repo_url }} riscv64
 
       - name: Inspect
         shell: bash
